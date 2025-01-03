@@ -1,84 +1,172 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'task_dialog.dart';
 
-class TaskManagerHome extends StatefulWidget {
-  @override
-  _TaskManagerHomeState createState() => _TaskManagerHomeState();
+void main() {
+  runApp(MyApp());
 }
 
-class _TaskManagerHomeState extends State<TaskManagerHome> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
-  // Fetch tasks from Firestore
-  Stream<QuerySnapshot> _getTasks() {
-    return _firestore.collection('tasks').snapshots();
-  }
-
-  // Delete task
-  Future<void> _deleteTask(String taskId) async {
-    await _firestore.collection('tasks').doc(taskId).delete();
-  }
-
-  // Show task dialog for adding or editing
-  void _showTaskDialog({String? taskId, String? title, String? description}) {
-    showDialog(
-      context: context,
-      builder: (context) => TaskDialog(
-        taskId: taskId,
-        title: title,
-        description: description,
-      ),
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: HomeScreen(),
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(primarySwatch: Colors.indigo),
     );
+  }
+}
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List todoList = [];
+  String singlevalue = "";
+
+  addString(content) {
+    setState(() {
+      singlevalue = content;
+    });
+  }
+
+  addList() {
+    setState(() {
+      todoList.add({"value": singlevalue});
+    });
+  }
+
+  deleteItem(index) {
+    setState(() {
+      todoList.removeAt(index);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Task Manager')),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _getTasks(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
-          }
-
-          final tasks = snapshot.data!.docs;
-
-          return ListView.builder(
-            itemCount: tasks.length,
-            itemBuilder: (context, index) {
-              final task = tasks[index];
-              return Card(
-                margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                child: ListTile(
-                  title: Text(task['title']),
-                  subtitle: Text(task['description']),
-                  trailing: Wrap(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.edit),
-                        onPressed: () => _showTaskDialog(
-                          taskId: task.id,
-                          title: task['title'],
-                          description: task['description'],
+      appBar: AppBar(
+        title: Text(
+          "Todo Application",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 25,
+          ),
+        ),
+        centerTitle: true,
+        toolbarHeight: 75,
+        leading: IconButton(
+          icon: Icon(Icons.menu),
+          onPressed: () {},
+        ),
+        elevation: 0,
+      ),
+      body: Container(
+        margin: EdgeInsets.all(10),
+        child: Column(
+          children: [
+            Expanded(
+              flex: 90,
+              child: ListView.builder(
+                  itemCount: todoList.length,
+                  itemBuilder: (context, index) {
+                    return Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      color: Colors.blue[900],
+                      child: SizedBox(
+                        height: 50,
+                        width: double.infinity,
+                        child: Container(
+                          margin: EdgeInsets.only(left: 20),
+                          alignment: Alignment.center,
+                          padding: EdgeInsets.all(10),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 80,
+                                child: Text(
+                                  todoList[index]['value'].toString(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                  flex: 20,
+                                  child: CircleAvatar(
+                                    radius: 30,
+                                    backgroundColor: Colors.white,
+                                    child: TextButton(
+                                      onPressed: () {
+                                        deleteItem(index);
+                                      },
+                                      child: Icon(
+                                        Icons.delete,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  )),
+                            ],
+                          ),
                         ),
                       ),
-                      IconButton(
-                        icon: Icon(Icons.delete),
-                        onPressed: () => _deleteTask(task.id),
+                    );
+                  }),
+            ),
+            Expanded(
+                flex: 10,
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 70,
+                      child: Container(
+                        height: 40,
+                        child: TextFormField(
+                          onChanged: (content) {
+                            addString(content);
+                          },
+                          decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              fillColor: Colors.blue[300],
+                              filled: true,
+                              labelText: 'Create Task....',
+                              labelStyle: TextStyle(
+                                color: Colors.indigo[900],
+                                fontWeight: FontWeight.bold,
+                              )),
+                        ),
                       ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showTaskDialog(),
-        child: Icon(Icons.add),
+                    ),
+                    Expanded(
+                        flex: 3,
+                        child: SizedBox(
+                          width: 5,
+                        )),
+                    Expanded(
+                        flex: 27,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            addList();
+                          },
+                          child: Container(
+                              height: 15,
+                              width: double.infinity,
+                              alignment: Alignment.center,
+                              child: Text("Add")),
+                        )),
+                  ],
+                )),
+          ],
+        ),
       ),
     );
   }
